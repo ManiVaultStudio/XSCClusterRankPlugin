@@ -1,7 +1,7 @@
 <RCC>
     <qresource prefix="">
-        <file>CrossSpeciesComparisonClusterRank_chart/icicle_chart.html</file>
-        <file>CrossSpeciesComparisonClusterRank_chart/icicle_chart.tools.js</file>
+        <file>XSCClusterRank_chart/icicle_chart.html</file>
+        <file>XSCClusterRank_chart/icicle_chart.tools.js</file>
     </qresource>
     <qresource prefix="">
         <file>js_libs/d3.v5.min.js</file>

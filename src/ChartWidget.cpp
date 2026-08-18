@@ -1,5 +1,5 @@
 #include "ChartWidget.h"
-#include "CrossSpeciesComparisonClusterRankPlugin.h"
+#include "XSCClusterRankPlugin.h"
 
 #include <QDebug>
 #include <QString>
@@ -68,15 +68,15 @@ void ChartCommObject::js_qt_passRightClickToQt(const QString& data) {
 // ChartWidget
 // =============================================================================
 
-ChartWidget::ChartWidget(CrossSpeciesComparisonClusterRankPlugin* viewJSPlugin):
+ChartWidget::ChartWidget(XSCClusterRankPlugin* viewJSPlugin):
     _viewJSPlugin(viewJSPlugin),
     _comObject()
 {
     // For more info on drag&drop behavior, see the Cross-Species Comparison Cluster Rank View project
     setAcceptDrops(true);
 
-    // Ensure linking to the resources defined in res/CrossSpeciesComparisonClusterRank_chart.qrc
-    Q_INIT_RESOURCE(CrossSpeciesComparisonClusterRank_chart);
+    // Ensure linking to the resources defined in res/XSCClusterRank_chart.qrc
+    Q_INIT_RESOURCE(XSCClusterRank_chart);
 
     // ManiVault and Qt create a "QtBridge" object on the js side which represents _comObject
     // there, we can connect the signals qt_js_* and call the slots js_qt_* from our communication object

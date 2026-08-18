@@ -1,9 +1,9 @@
-#include "CrossSpeciesComparisonClusterRankPlugin.h"
+#include "XSCClusterRankPlugin.h"
 
 #include "ChartWidget.h"
 
 #include <DatasetsMimeData.h>
-
+#include <util/Serialization.h>
 #include <vector>
 #include <random>
 #include <QString>
@@ -14,7 +14,7 @@
 #include <QMimeData>
 #include <QDebug>
 #include "ClusterData/ClusterData.h"
-#include <CrossSpeciesComparisonTreeData/CrossSpeciesComparisonTreeData.h>
+#include <XSCTreeData/XSCTreeData.h>
 #include "PointData/PointData.h"
 #include "lib/JSONnlohmann/json.hpp"
 #include "lib/Clustering/fastcluster.h"
@@ -33,7 +33,7 @@
 #include "lib/Distance/annoylib.h"
 #include "lib/Distance/kissrandom.h"
 
-Q_PLUGIN_METADATA(IID "studio.manivault.CrossSpeciesComparisonClusterRankPlugin")
+Q_PLUGIN_METADATA(IID "studio.manivault.XSCClusterRankPlugin")
 
 using namespace mv;
 
@@ -44,7 +44,7 @@ struct PointClusterNames
     QString bottomHierarchy;
 };
 
-CrossSpeciesComparisonClusterRankPlugin::CrossSpeciesComparisonClusterRankPlugin(const PluginFactory* factory) :
+XSCClusterRankPlugin::XSCClusterRankPlugin(const PluginFactory* factory) :
     ViewPlugin(factory),
     _chartWidget(nullptr),
     _dropWidget(nullptr),
@@ -53,7 +53,7 @@ CrossSpeciesComparisonClusterRankPlugin::CrossSpeciesComparisonClusterRankPlugin
 {
 }
 
-void CrossSpeciesComparisonClusterRankPlugin::init()
+void XSCClusterRankPlugin::init()
 {
     auto& shortcuts = getShortcuts();
     shortcuts.add({ QKeySequence(Qt::Key_Escape), "Deselect", "Remove all selection" });
@@ -74,7 +74,7 @@ void CrossSpeciesComparisonClusterRankPlugin::init()
 
     // Create chart widget and set html contents of webpage 
     _chartWidget = new ChartWidget(this);
-    _chartWidget->setPage(":CrossSpeciesComparisonClusterRank_chart/icicle_chart.html", "qrc:/CrossSpeciesComparisonClusterRank_chart/");
+    _chartWidget->setPage(":XSCClusterRank_chart/icicle_chart.html", "qrc:/XSCClusterRank_chart/");
 
    
     auto mainLayout = new QVBoxLayout();
@@ -343,7 +343,7 @@ void CrossSpeciesComparisonClusterRankPlugin::init()
 
                 if (speciesSelectedIndicesCounter.size() > 0)
                 {
-                    // qDebug() << "CrossSpeciesComparisonClusterRankPlugin::publishSelection: Send selection to core";
+                    // qDebug() << "XSCClusterRankPlugin::publishSelection: Send selection to core";
                     QJsonObject valueStringReference = createJsonTree(speciesSelectedIndicesCounter);
                     //print speciesSelectedIndicesCounter
                     /*
@@ -357,7 +357,7 @@ void CrossSpeciesComparisonClusterRankPlugin::init()
                     qDebug() << "*******************";
                     */
 
-                    auto mainTreeDataset = mv::data().getDataset<CrossSpeciesComparisonTree>(_settingsAction.getFilterEditTreeDataset().getCurrentDataset().getDatasetId());
+                    auto mainTreeDataset = mv::data().getDataset<XSCTree>(_settingsAction.getFilterEditTreeDataset().getCurrentDataset().getDatasetId());
                     mainTreeDataset->setTreeData(valueStringReference);
 
                     events().notifyDatasetDataChanged(mainTreeDataset);
@@ -374,7 +374,7 @@ void CrossSpeciesComparisonClusterRankPlugin::init()
     connect(&_settingsAction.getCreatePointSelectTree(), &TriggerAction::triggered, this, getCreatePointSelectTreeUpdate);
 
 
-    // Instantiate new drop widget: See CrossSpeciesComparisonClusterRank for details
+    // Instantiate new drop widget: See XSCClusterRank for details
     _dropWidget = new DropWidget(_chartWidget);
     _dropWidget->setDropIndicatorWidget(new DropWidget::DropIndicatorWidget(&getWidget(), "No data loaded", "Drag the Point data which has child cluster datasets to this view"));
 
@@ -427,23 +427,23 @@ void CrossSpeciesComparisonClusterRankPlugin::init()
         });
     computeHierarchy();
     // update data when data set changed
-    connect(&_currentDataSet, &Dataset<Points>::dataChanged, this, &CrossSpeciesComparisonClusterRankPlugin::computeHierarchy);
+    connect(&_currentDataSet, &Dataset<Points>::dataChanged, this, &XSCClusterRankPlugin::computeHierarchy);
 
     // Update the selection (coming from PCP) in core
-    connect(&_chartWidget->getCommunicationObject(), &ChartCommObject::passSelectionToCore, this, &CrossSpeciesComparisonClusterRankPlugin::publishSelection);
-    connect(&_chartWidget->getCommunicationObject(), &ChartCommObject::passClusterOrderToCore, this, &CrossSpeciesComparisonClusterRankPlugin::publishClusterOrder);
-    connect(&_chartWidget->getCommunicationObject(), &ChartCommObject::passRightClickToCore, this, &CrossSpeciesComparisonClusterRankPlugin::publishRightClickCluster);
+    connect(&_chartWidget->getCommunicationObject(), &ChartCommObject::passSelectionToCore, this, &XSCClusterRankPlugin::publishSelection);
+    connect(&_chartWidget->getCommunicationObject(), &ChartCommObject::passClusterOrderToCore, this, &XSCClusterRankPlugin::publishClusterOrder);
+    connect(&_chartWidget->getCommunicationObject(), &ChartCommObject::passRightClickToCore, this, &XSCClusterRankPlugin::publishRightClickCluster);
     _settingsAction.getStatusChangedAction().setString("M");
 
 }
 
-void CrossSpeciesComparisonClusterRankPlugin::loadData(const mv::Datasets& datasets)
+void XSCClusterRankPlugin::loadData(const mv::Datasets& datasets)
 {
     // Exit if there is nothing to load
     if (datasets.isEmpty())
         return;
 
-    //qDebug() << "CrossSpeciesComparisonClusterRankPlugin::loadData: Load data set from ManiVault core";
+    //qDebug() << "XSCClusterRankPlugin::loadData: Load data set from ManiVault core";
 
 
     _currentDataSet = datasets.first();
@@ -459,7 +459,7 @@ QVariantMap createNode(const QString& name, const QString& color, const QVariant
     return node;
 }
 
-void CrossSpeciesComparisonClusterRankPlugin::hierarchyStrokeforSelected()
+void XSCClusterRankPlugin::hierarchyStrokeforSelected()
 {
     {
         auto clusterDataset = _settingsAction.getHierarchyBottomClusterDataset().getCurrentDataset();
@@ -579,7 +579,7 @@ QVariantList buildChartData(const std::map<std::pair<QString, QString>, std::map
     return chartData;
 }
 
-void CrossSpeciesComparisonClusterRankPlugin::computeHierarchy()
+void XSCClusterRankPlugin::computeHierarchy()
 {
     auto topHierarchyDataset = _settingsAction.getHierarchyTopClusterDataset().getCurrentDataset();
     auto middleHierarchyDataset = _settingsAction.getHierarchyMiddleClusterDataset().getCurrentDataset();
@@ -659,12 +659,12 @@ void CrossSpeciesComparisonClusterRankPlugin::computeHierarchy()
     }
     else
     {
-        //qDebug() << "CrossSpeciesComparisonClusterRankPlugin::computeHierarchy: Not all datasets are valid";
+        //qDebug() << "XSCClusterRankPlugin::computeHierarchy: Not all datasets are valid";
     }
 
 }
 
-void CrossSpeciesComparisonClusterRankPlugin::convertDataAndUpdateChart()
+void XSCClusterRankPlugin::convertDataAndUpdateChart()
 {
 
     _dropWidget->setShowDropIndicator(false);
@@ -806,7 +806,7 @@ void CrossSpeciesComparisonClusterRankPlugin::convertDataAndUpdateChart()
     
 }
 
-QJsonObject CrossSpeciesComparisonClusterRankPlugin::createJsonTree(std::map<QString, int> speciesSelectedIndicesCounter)
+QJsonObject XSCClusterRankPlugin::createJsonTree(std::map<QString, int> speciesSelectedIndicesCounter)
 {
     QJsonObject valueStringReference;
 
@@ -863,13 +863,13 @@ QJsonObject CrossSpeciesComparisonClusterRankPlugin::createJsonTree(std::map<QSt
     return valueStringReference;
 }
 
-void CrossSpeciesComparisonClusterRankPlugin::publishClusterOrder(const QString& orderedClusters)
+void XSCClusterRankPlugin::publishClusterOrder(const QString& orderedClusters)
 {
     _settingsAction.getClusterOrder().setString(orderedClusters);
-    //qDebug() << "CrossSpeciesComparisonClusterRankPlugin::publishClusterOrder: Send cluster order to core"<< orderedClusters;
+    //qDebug() << "XSCClusterRankPlugin::publishClusterOrder: Send cluster order to core"<< orderedClusters;
 }
 
-void CrossSpeciesComparisonClusterRankPlugin::publishRightClickCluster(const QString& orderedClusters)
+void XSCClusterRankPlugin::publishRightClickCluster(const QString& orderedClusters)
 {
     //aplit the const clusterNameAndLevel = `${clusterName} @%$,$%@ ${clusterLevel}`;
     _settingsAction.getRightClickedCluster().setString("");
@@ -907,7 +907,7 @@ void CrossSpeciesComparisonClusterRankPlugin::publishRightClickCluster(const QSt
     */
 }
 
-void CrossSpeciesComparisonClusterRankPlugin::publishSelection(const std::vector<QString>& selectedIDs,const QString& topHselectedIDs)
+void XSCClusterRankPlugin::publishSelection(const std::vector<QString>& selectedIDs,const QString& topHselectedIDs)
 {
     auto clusterDataset= _settingsAction.getHierarchyBottomClusterDataset().getCurrentDataset();
     auto pointsDataset= _settingsAction.getMainPointsDataset().getCurrentDataset();
@@ -1000,7 +1000,7 @@ void CrossSpeciesComparisonClusterRankPlugin::publishSelection(const std::vector
 
         if ( speciesSelectedIndicesCounter.size()>0)
         {
-           // qDebug() << "CrossSpeciesComparisonClusterRankPlugin::publishSelection: Send selection to core";
+           // qDebug() << "XSCClusterRankPlugin::publishSelection: Send selection to core";
             QJsonObject valueStringReference = createJsonTree(speciesSelectedIndicesCounter);
             //print speciesSelectedIndicesCounter
             /*
@@ -1014,7 +1014,7 @@ void CrossSpeciesComparisonClusterRankPlugin::publishSelection(const std::vector
             qDebug() << "*******************";
             */
 
-            auto mainTreeDataset = mv::data().getDataset<CrossSpeciesComparisonTree>(_settingsAction.getFilterEditTreeDataset().getCurrentDataset().getDatasetId());
+            auto mainTreeDataset = mv::data().getDataset<XSCTree>(_settingsAction.getFilterEditTreeDataset().getCurrentDataset().getDatasetId());
             mainTreeDataset->setTreeData(valueStringReference);
 
             events().notifyDatasetDataChanged(mainTreeDataset);
@@ -1132,7 +1132,7 @@ namespace  local
 }
 
 
-void CrossSpeciesComparisonClusterRankPlugin::createHierarchy(qsizetype index, const Dataset<DatasetImpl>& dataset)
+void XSCClusterRankPlugin::createHierarchy(qsizetype index, const Dataset<DatasetImpl>& dataset)
 {
     
     const qsizetype NrOfDatasets = _selectedDatasetsAction.size();
@@ -1187,14 +1187,14 @@ void CrossSpeciesComparisonClusterRankPlugin::createHierarchy(qsizetype index, c
 
 
 
-QString CrossSpeciesComparisonClusterRankPlugin::getCurrentDataSetID() const
+QString XSCClusterRankPlugin::getCurrentDataSetID() const
 {
     if (_currentDataSet.isValid())
         return _currentDataSet->getId();
     else
         return QString{};
 }
-void CrossSpeciesComparisonClusterRankPlugin::fromVariantMap(const QVariantMap& variantMap)
+void XSCClusterRankPlugin::fromVariantMap(const QVariantMap& variantMap)
 {
     ViewPlugin::fromVariantMap(variantMap);
 
@@ -1204,7 +1204,7 @@ void CrossSpeciesComparisonClusterRankPlugin::fromVariantMap(const QVariantMap& 
 
 }
 
-QVariantMap CrossSpeciesComparisonClusterRankPlugin::toVariantMap() const
+QVariantMap XSCClusterRankPlugin::toVariantMap() const
 {
     QVariantMap variantMap = ViewPlugin::toVariantMap();
 
@@ -1217,30 +1217,30 @@ QVariantMap CrossSpeciesComparisonClusterRankPlugin::toVariantMap() const
 // Plugin Factory 
 // =============================================================================
 
-CrossSpeciesComparisonClusterRankPluginFactory::CrossSpeciesComparisonClusterRankPluginFactory()
+XSCClusterRankPluginFactory::XSCClusterRankPluginFactory()
 {
     setIconByName("sitemap");
 }
 
-ViewPlugin* CrossSpeciesComparisonClusterRankPluginFactory::produce()
+ViewPlugin* XSCClusterRankPluginFactory::produce()
 {
-    return new CrossSpeciesComparisonClusterRankPlugin(this);
+    return new XSCClusterRankPlugin(this);
 }
 
-mv::DataTypes CrossSpeciesComparisonClusterRankPluginFactory::supportedDataTypes() const
+mv::DataTypes XSCClusterRankPluginFactory::supportedDataTypes() const
 {
-    // This CrossSpeciesComparisonClusterRank analysis plugin is compatible with points datasets
+    // This XSCClusterRank analysis plugin is compatible with points datasets
     DataTypes supportedTypes;
     supportedTypes.append(PointType);
     return supportedTypes;
 }
 
-mv::gui::PluginTriggerActions CrossSpeciesComparisonClusterRankPluginFactory::getPluginTriggerActions(const mv::Datasets& datasets) const
+mv::gui::PluginTriggerActions XSCClusterRankPluginFactory::getPluginTriggerActions(const mv::Datasets& datasets) const
 {
     PluginTriggerActions pluginTriggerActions;
     bool isValidDataset = false;
-    const auto getPluginInstance = [this]() -> CrossSpeciesComparisonClusterRankPlugin* {
-        return dynamic_cast<CrossSpeciesComparisonClusterRankPlugin*>(plugins().requestViewPlugin(getKind()));
+    const auto getPluginInstance = [this]() -> XSCClusterRankPlugin* {
+        return dynamic_cast<XSCClusterRankPlugin*>(plugins().requestViewPlugin(getKind()));
     };
 
     const auto numberOfDatasets = datasets.count();
@@ -1256,7 +1256,7 @@ mv::gui::PluginTriggerActions CrossSpeciesComparisonClusterRankPluginFactory::ge
 
         if (isValidDataset)
         {
-            auto pluginTriggerAction = new PluginTriggerAction(const_cast<CrossSpeciesComparisonClusterRankPluginFactory*>(this), this, "Cross-Species Comparison Cluster Rank View", "Cross-Species Comparison Cluster Rank visualization", StyledIcon("sitemap"), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
+            auto pluginTriggerAction = new PluginTriggerAction(const_cast<XSCClusterRankPluginFactory*>(this), this, "Cross-Species Comparison Cluster Rank View", "Cross-Species Comparison Cluster Rank visualization", StyledIcon("sitemap"), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
                 for (auto dataset : datasets)
                     getPluginInstance()->loadData(Datasets({ dataset }));
 

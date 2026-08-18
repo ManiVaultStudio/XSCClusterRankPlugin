@@ -1,5 +1,5 @@
 {
   "name": "Cross-Species Comparison Cluster Rank View",
   "version": "1.1",
-  "dependencies": [ "Points", "Cluster", "CrossSpeciesComparisonTree" ]
+  "dependencies": [ "Points", "Cluster", "XSCTree" ]
 }

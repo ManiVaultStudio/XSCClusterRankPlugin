@@ -5,7 +5,7 @@
 #include <Dataset.h>
 #include <PointData/PointData.h>
 #include <ClusterData/ClusterData.h>
-#include <CrossSpeciesComparisonTreeData/CrossSpeciesComparisonTreeData.h>
+#include <XSCTreeData/XSCTreeData.h>
 #include <widgets/DropWidget.h>
 #include "SettingsAction.h"
 #include <QWidget>
@@ -23,7 +23,7 @@ using namespace mv::util;
 class ChartWidget;
 
 
-class CrossSpeciesComparisonClusterRankPlugin : public ViewPlugin
+class XSCClusterRankPlugin : public ViewPlugin
 {
     Q_OBJECT
 
@@ -32,10 +32,10 @@ public:
      * Constructor
      * @param factory Pointer to the plugin factory
      */
-    CrossSpeciesComparisonClusterRankPlugin(const PluginFactory* factory);
+    XSCClusterRankPlugin(const PluginFactory* factory);
 
     /** Destructor */
-    ~CrossSpeciesComparisonClusterRankPlugin() override = default;
+    ~XSCClusterRankPlugin() override = default;
     
     /** This function is called by the core after the view plugin has been created */
     void init() override;
@@ -78,35 +78,35 @@ protected:
     mv::Dataset<Points>   _currentDataSet;    // Reference to currently shown data set
     //mv::Dataset<Clusters> _clusterDataset;    // Reference to the cluster dataset
     mv::Dataset<Points>   _embeddingDataset; // Reference to the low-dimensional t-SNE dataset
-    //Dataset<CrossSpeciesComparisonTree>    _mainTreeDataset; // Reference to the main tree dataset
+    //Dataset<XSCTree>    _mainTreeDataset; // Reference to the main tree dataset
     bool _pauseSelectionEvent = false;
     QVariantList _dataForChart;
 };
 
 /**
- * CrossSpeciesComparisonClusterRank view plugin factory class
+ * XSCClusterRank view plugin factory class
  *
  * Note: Factory does not need to be altered (merely responsible for generating new plugins when requested)
  */
-class CrossSpeciesComparisonClusterRankPluginFactory : public ViewPluginFactory
+class XSCClusterRankPluginFactory : public ViewPluginFactory
 {
     Q_INTERFACES(mv::plugin::ViewPluginFactory mv::plugin::PluginFactory)
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID   "studio.manivault.CrossSpeciesComparisonClusterRankPlugin"
-                      FILE  "CrossSpeciesComparisonClusterRankPlugin.json")
+    Q_PLUGIN_METADATA(IID   "studio.manivault.XSCClusterRankPlugin"
+                      FILE  "XSCClusterRankPlugin.json")
 
 public:
 
     /** Default constructor */
-    CrossSpeciesComparisonClusterRankPluginFactory();
+    XSCClusterRankPluginFactory();
 
     /** Destructor */
-    ~CrossSpeciesComparisonClusterRankPluginFactory() override {}
+    ~XSCClusterRankPluginFactory() override {}
     
-    /** Creates an instance of the CrossSpeciesComparisonClusterRank view plugin */
+    /** Creates an instance of the XSCClusterRank view plugin */
     ViewPlugin* produce() override;
 
-    /** Returns the data types that are supported by the CrossSpeciesComparisonClusterRank view plugin */
+    /** Returns the data types that are supported by the XSCClusterRank view plugin */
     mv::DataTypes supportedDataTypes() const override;
 
     /**

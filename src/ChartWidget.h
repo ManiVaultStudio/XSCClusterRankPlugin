@@ -6,7 +6,7 @@
 
 Q_DECLARE_METATYPE(QVariantList)
 
-class CrossSpeciesComparisonClusterRankPlugin;
+class XSCClusterRankPlugin;
 
 // =============================================================================
 // ParlCoorCommunicationObject
@@ -54,7 +54,7 @@ class ChartWidget : public mv::gui::WebWidget
 {
     Q_OBJECT
 public:
-    ChartWidget(CrossSpeciesComparisonClusterRankPlugin* viewJSPlugin);
+    ChartWidget(XSCClusterRankPlugin* viewJSPlugin);
 
     ChartCommObject& getCommunicationObject() { return _comObject; };
 
@@ -64,6 +64,6 @@ private slots:
     void initWebPage() override;
 
 private:
-    CrossSpeciesComparisonClusterRankPlugin*  _viewJSPlugin;    // Pointer to the main plugin class
+    XSCClusterRankPlugin*  _viewJSPlugin;    // Pointer to the main plugin class
     ChartCommObject       _comObject;       // Communication Object between Qt (cpp) and JavaScript
 };

@@ -1,11 +1,11 @@
 #include "SettingsAction.h"
-#include "CrossSpeciesComparisonClusterRankPlugin.h"
+#include "XSCClusterRankPlugin.h"
 #include <vector>
 #include <numeric>
 #include <QtConcurrent>
 #include <iostream>
 #include <algorithm>
-#include <CrossSpeciesComparisonTreeData/CrossSpeciesComparisonTreeData.h>
+#include <XSCTreeData/XSCTreeData.h>
 #include "lib/Distance/annoylib.h"
 #include "lib/Distance/kissrandom.h"
 #include "lib/JSONnlohmann/json.hpp"
@@ -211,7 +211,7 @@ QString SettingsAction::createJsonTreeFromNewick(QString tree, std::vector<QStri
 
     nlohmann::json json = nlohmann::json::parse(jsonString);
     std::string jsonStr = json.dump(4);
-    //qDebug()<< "CrossSpeciesComparisonClusterRankPlugin::createJsonTree: jsonStr: " << QString::fromStdString(jsonStr);
+    //qDebug()<< "XSCClusterRankPlugin::createJsonTree: jsonStr: " << QString::fromStdString(jsonStr);
     QString formattedTree = QString::fromStdString(jsonStr);
 
     
@@ -383,7 +383,7 @@ QVariant SettingsAction::createModelFromData(const QStringList& returnGeneList, 
     std::map<QString, std::pair<QString, float>> treeSimilarities;
     if (treeDatasetId != "")
     {
-        auto fullTreeData = mv::data().getDataset<CrossSpeciesComparisonTree>(treeDatasetId);
+        auto fullTreeData = mv::data().getDataset<XSCTree>(treeDatasetId);
         if (fullTreeData.isValid())
         {
             fullTreeNames = fullTreeData->getTreeLeafNames();
@@ -672,9 +672,9 @@ QVariant SettingsAction::createModelFromData(const QStringList& returnGeneList, 
 
 
 
-SettingsAction::SettingsAction(CrossSpeciesComparisonClusterRankPlugin& CrossSpeciesComparisonClusterRankPlugin) :
-    WidgetAction(&CrossSpeciesComparisonClusterRankPlugin, "CrossSpeciesComparisonClusterRankPlugin Settings"),
-    _crossSpeciesComparisonClusterRankPlugin(CrossSpeciesComparisonClusterRankPlugin),
+SettingsAction::SettingsAction(XSCClusterRankPlugin& XSCClusterRankPlugin) :
+    WidgetAction(&XSCClusterRankPlugin, "XSCClusterRankPlugin Settings"),
+    _XSCClusterRankPlugin(XSCClusterRankPlugin),
     _mainPointsDataset(this, "Main Points"),
     _hierarchyTopClusterDataset(this, "Top Hierarchy"),
     _hierarchyMiddleClusterDataset(this, "Middle Hierarchy"),
@@ -784,10 +784,10 @@ SettingsAction::SettingsAction(CrossSpeciesComparisonClusterRankPlugin& CrossSpe
         return dataset->getDataType() == ClusterType;
         });
     _filterEditTreeDataset.setFilterFunction([this](mv::Dataset<DatasetImpl> dataset) -> bool {
-        return dataset->getDataType() == CrossSpeciesComparisonTreeType;
+        return dataset->getDataType() == XSCTreeType;
         });
     _referenceTreeDataset.setFilterFunction([this](mv::Dataset<DatasetImpl> dataset) -> bool {
-        return dataset->getDataType() == CrossSpeciesComparisonTreeType;
+        return dataset->getDataType() == XSCTreeType;
         });
     const auto filterTreedatasetUpdate = [this]() -> void {};
     connect(&_filterEditTreeDataset, &DatasetPickerAction::currentIndexChanged, this, filterTreedatasetUpdate);
@@ -875,7 +875,7 @@ SettingsAction::SettingsAction(CrossSpeciesComparisonClusterRankPlugin& CrossSpe
     //                 QStringList fullTreeNames;
     //                 if (datasetId!="")
     //                 {
-    //                     auto fullTreeData = mv::data().getDataset<CrossSpeciesComparisonTree>(datasetId);
+    //                     auto fullTreeData = mv::data().getDataset<XSCTree>(datasetId);
     //                     if (fullTreeData.isValid())
     //                     {
     //                         fullTreeNames = fullTreeData->getTreeLeafNames();
@@ -1412,7 +1412,7 @@ SettingsAction::OptionSelectionAction::Widget::Widget(QWidget* parent, OptionSel
 { }
 
 inline SettingsAction::OptionSelectionAction::OptionSelectionAction(SettingsAction& SettingsAction) :
-    GroupAction(nullptr, "CrossSpeciesComparisonGeneDetectPluginOptionSelectionAction"),
+    GroupAction(nullptr, "XSCGeneDetectPluginOptionSelectionAction"),
     _settingsAction(SettingsAction)
 {
     setText("Options");
