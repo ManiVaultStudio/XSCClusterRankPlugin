@@ -99,7 +99,7 @@ protected:
  */
 class XSCClusterRankPluginFactory : public ViewPluginFactory
 {
-        Q_INTERFACES(mv::plugin::ViewPluginFactory mv::plugin::PluginFactory)
+        Q_INTERFACES(mv::plugin::ViewPluginFactory)
         Q_OBJECT
         Q_PLUGIN_METADATA(IID   "studio.manivault.XSCClusterRankPlugin"
             FILE  "XSCClusterRankPlugin.json")
