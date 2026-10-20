@@ -13,6 +13,7 @@
 #include <QVariantMap>
 #include <QMimeData>
 #include <QDebug>
+#include <QTimer>
 #include "ClusterData/ClusterData.h"
 #include <XSCTreeData/XSCTreeData.h>
 #include "PointData/PointData.h"
@@ -57,17 +58,17 @@ void XSCClusterRankPlugin::init()
 {
     auto& shortcuts = getShortcuts();
     shortcuts.add({ QKeySequence(Qt::Key_Escape), "Deselect", "Remove all selection" });
-    shortcuts.add({ QKeySequence(Qt::SHIFT), "Multi-Selection" ,"Mouse left click"});
-    
+    shortcuts.add({ QKeySequence(Qt::SHIFT), "Multi-Selection" ,"Mouse left click" });
+
     shortcuts.add({ QKeySequence(Qt::MouseButton::LeftButton), "Hover", "Count details" });
-    shortcuts.add({ QKeySequence(Qt::ALT), "Zoom in","Mouse left click on parent rectangle"});
+    shortcuts.add({ QKeySequence(Qt::ALT), "Zoom in","Mouse left click on parent rectangle" });
     shortcuts.add({ QKeySequence(Qt::ALT), "Zoom out", "Mouse left click on parent rectangle" });
     //getLearningCenterAction().setPluginTitle("Cluster Hierarchy View");
-    
+
     getWidget().setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
-     
-    
+
+
     // Create layout
     auto layout = new QVBoxLayout();
     layout->setContentsMargins(0, 0, 0, 0);
@@ -76,7 +77,7 @@ void XSCClusterRankPlugin::init()
     _chartWidget = new ChartWidget(this);
     _chartWidget->setPage(":XSCClusterRank_chart/icicle_chart.html", "qrc:/XSCClusterRank_chart/");
 
-   
+
     auto mainLayout = new QVBoxLayout();
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
@@ -134,7 +135,7 @@ void XSCClusterRankPlugin::init()
     mainOptionsGroup->addAction(wrappedDividerActionMain2);
 
 
-    
+
     mainOptionsGroup->addAction(&_settingsAction.getStatusChangedAction());
     mainOptionsGroup->addAction(&_settingsAction.getClusterOrder());
     mainOptionsGroup->addAction(&_settingsAction.getRightClickedCluster());
@@ -150,7 +151,7 @@ void XSCClusterRankPlugin::init()
     mainLayout->addWidget(_chartWidget, 1);
 
     getWidget().setLayout(mainLayout);
-   
+
 
     const auto mainPointsDatasetUpdate = [this]() -> void
         {
@@ -177,7 +178,7 @@ void XSCClusterRankPlugin::init()
 
     const auto clearRightClickClusterUpdate = [this]() -> void
         {
-            
+
             emit _chartWidget->getCommunicationObject().qt_js_removeRightClickIcon("Remove");
             //_settingsAction.getRightClickedCluster().setString("");
         };
@@ -185,7 +186,7 @@ void XSCClusterRankPlugin::init()
 
     const auto statusComplete = [this]() -> void
         {
-            if (_settingsAction.getStatusChangedAction().getString()=="C")
+            if (_settingsAction.getStatusChangedAction().getString() == "C")
             {
                 hierarchyStrokeforSelected();
             }
@@ -195,12 +196,16 @@ void XSCClusterRankPlugin::init()
     const auto clusterSelectionFromPopulationPyramidDatasetChange = [this]() -> void
         {
             //qDebug() << "Item selected in Population Pyramid";
-            if (!_pauseSelectionEvent)
+            // _pauseSelectionEvent only covers events that are delivered while publishSelection() is running. The core can deliver
+            // the selection events of that click afterwards; they are the echo of our own click and must not remove the
+            // outline of the box that was just clicked (it is removed when the gene detect update has finished and the
+            // lower levels are marked, or when a selection comes from somewhere else).
+            if (!_pauseSelectionEvent && !_ignoreOwnSelectionEcho)
             {
                 emit _chartWidget->getCommunicationObject().qt_js_removeClusterSelectionHighlight("Remove");
                 _settingsAction.getStatusChangedAction().setString("M");
             }
-            
+
         };
     connect(&_embeddingDataset, &mv::Dataset<Points>::dataSelectionChanged, this, clusterSelectionFromPopulationPyramidDatasetChange);
 
@@ -212,27 +217,27 @@ void XSCClusterRankPlugin::init()
             {
                 if (hierarchyTopClusterDataset->getParent() == _currentDataSet)
                 {
-                    auto TopClusterFull= mv::data().getDataset<Clusters>(hierarchyTopClusterDataset.getDatasetId());
+                    auto TopClusterFull = mv::data().getDataset<Clusters>(hierarchyTopClusterDataset.getDatasetId());
                     for (auto cluster : TopClusterFull->getClusters())
                     {
-                        
+
                         auto clusterName = cluster.getName();
-                        if (clusterName!="")
+                        if (clusterName != "")
                         {
                             Options.append(clusterName);
-                        }                        
+                        }
                     }
                     if (!Options.isEmpty())
                     {
                         _settingsAction.getTopHierarchyRelativeClusterCountInclusion().setOptions(Options);
                         _settingsAction.getTopHierarchyRelativeClusterCountInclusion().setSelectedOptions(Options);
                     }
-                    
+
                 }
                 computeHierarchy();
             }
             //&_settingsAction.getTopHierarchyRelativeClusterCountInclusion()
-   
+
         };
     connect(&_settingsAction.getHierarchyTopClusterDataset(), &DatasetPickerAction::currentIndexChanged, this, hierarchyTopClusterDatasetUpdate);
 
@@ -243,18 +248,18 @@ void XSCClusterRankPlugin::init()
             {
                 computeHierarchy();
             }
-     };
-     connect(&_settingsAction.getHierarchyMiddleClusterDataset(), &DatasetPickerAction::currentIndexChanged, this, hierarchyMiddleClusterDatasetUpdate);
+        };
+    connect(&_settingsAction.getHierarchyMiddleClusterDataset(), &DatasetPickerAction::currentIndexChanged, this, hierarchyMiddleClusterDatasetUpdate);
 
-     const auto hierarchyBottomClusterDatasetUpdate = [this]() -> void
-         {
-             auto hierarchyBottomClusterDataset = _settingsAction.getHierarchyBottomClusterDataset().getCurrentDataset();
-             if (hierarchyBottomClusterDataset.isValid())
-             {
-                 computeHierarchy();
-             }
-         };
-     connect(&_settingsAction.getHierarchyBottomClusterDataset(), &DatasetPickerAction::currentIndexChanged, this, hierarchyBottomClusterDatasetUpdate);
+    const auto hierarchyBottomClusterDatasetUpdate = [this]() -> void
+        {
+            auto hierarchyBottomClusterDataset = _settingsAction.getHierarchyBottomClusterDataset().getCurrentDataset();
+            if (hierarchyBottomClusterDataset.isValid())
+            {
+                computeHierarchy();
+            }
+        };
+    connect(&_settingsAction.getHierarchyBottomClusterDataset(), &DatasetPickerAction::currentIndexChanged, this, hierarchyBottomClusterDatasetUpdate);
 
     const auto getTopHierarchyRelativeClusterCountInclusionUpdate = [this]() -> void {
         //auto hierarchyTopClusterDataset = _settingsAction.getHierarchyTopClusterDataset().getCurrentDataset();
@@ -284,11 +289,11 @@ void XSCClusterRankPlugin::init()
     //connect(&mv::projects(), &AbstractProjectManager::projectOpened, this, hierarchyStrokeforSelected);
     const auto getCreatePointSelectTreeUpdate = [this]() -> void
         {
-            
+
             auto clusterDataset = _settingsAction.getHierarchyBottomClusterDataset().getCurrentDataset();
             auto pointsDataset = _settingsAction.getMainPointsDataset().getCurrentDataset();
             //auto speciesDataset= _settingsAction.getSpeciesNamesDataset().getCurrentDataset();
-            std::vector<std::uint32_t> selectedIndices= pointsDataset->getSelectionIndices();
+            std::vector<std::uint32_t> selectedIndices = pointsDataset->getSelectionIndices();
 
             auto hierarchyTopClusterDataset = _settingsAction.getHierarchyTopClusterDataset().getCurrentDataset();
 
@@ -297,7 +302,7 @@ void XSCClusterRankPlugin::init()
 
 
             int relativeCellcount = 0;
-            if (clusterDataset.isValid() && pointsDataset.isValid() && hierarchyTopClusterDataset.isValid() && _currentDataSet.isValid() )
+            if (clusterDataset.isValid() && pointsDataset.isValid() && hierarchyTopClusterDataset.isValid() && _currentDataSet.isValid())
             {
                 if (hierarchyTopClusterDataset->getParent() == _currentDataSet)
                 {
@@ -317,7 +322,7 @@ void XSCClusterRankPlugin::init()
                 }
 
             }
-           
+
 
             if (_settingsAction.getFilterEditTreeDataset().getCurrentDataset().isValid() && _settingsAction.getSpeciesNamesDataset().getCurrentDataset().isValid() && selectedIndices.size() > 0)
             {
@@ -393,18 +398,18 @@ void XSCClusterRankPlugin::init()
             return dropRegions;
 
         const auto dataset = datasetsMimeData->getDatasets().first();
-        
+
         auto children = dataset->getChildren({ ClusterType }, false);
         if (children.size() < 2)
             return dropRegions;
-        
+
         const auto datasetGuiName = dataset->text();
         const auto datasetId = dataset->getId();
         const auto dataType = dataset->getDataType();
         const auto dataTypes = DataTypes({ PointType });
 
 
-        if (dataTypes.contains(dataType) ) {
+        if (dataTypes.contains(dataType)) {
 
             if (datasetId == getCurrentDataSetID()) {
                 dropRegions << new DropWidget::DropRegion(this, "Warning", "Data already loaded", "exclamation-circle", false);
@@ -414,7 +419,7 @@ void XSCClusterRankPlugin::init()
 
                 dropRegions << new DropWidget::DropRegion(this, "Points", QString("Visualize %1 as cluster rank").arg(datasetGuiName), "map-marker-alt", true, [this, candidateDataset]() {
                     loadData({ candidateDataset });
-                   
+
                     });
 
             }
@@ -495,7 +500,7 @@ void XSCClusterRankPlugin::hierarchyStrokeforSelected()
                     // Check if at least one index of clusterIndices is present in selectedIndices
                     bool atLeastOnePresent = std::any_of(clusterIndices.begin(), clusterIndices.end(), [&selectedIndices](uint32_t index) {
                         return std::binary_search(selectedIndices.begin(), selectedIndices.end(), index);
-                    });
+                        });
 
                     // If all indices are present
                     if (allPresent) {
@@ -508,7 +513,7 @@ void XSCClusterRankPlugin::hierarchyStrokeforSelected()
                 }
                 //qDebug() << "Full Cluster Names: " << fullClusterNames;
                 //qDebug() << "Partial Cluster Names: " << partialClusterNames;
-                QString fullList="";
+                QString fullList = "";
                 QString partialList = "";
                 if (fullClusterNames.size() > 0)
                 {
@@ -535,7 +540,7 @@ void XSCClusterRankPlugin::hierarchyStrokeforSelected()
                 {
                     totalList = "##%%$joinHere$%%##";
                 }
-                
+
                 emit _chartWidget->getCommunicationObject().qt_js_setClusterMarks(totalList);
 
             }
@@ -784,7 +789,7 @@ void XSCClusterRankPlugin::convertDataAndUpdateChart()
         QJsonDocument doc = QJsonDocument::fromVariant(QVariant::fromValue(_dataForChart));
         {
             QString jsonString = doc.toJson(QJsonDocument::Compact);
-            
+
             if (!jsonString.isEmpty() && jsonString != "")
             {
 
@@ -803,7 +808,7 @@ void XSCClusterRankPlugin::convertDataAndUpdateChart()
         qDebug() << "Data is empty";
     }
 
-    
+
 }
 
 QJsonObject XSCClusterRankPlugin::createJsonTree(std::map<QString, int> speciesSelectedIndicesCounter)
@@ -811,14 +816,14 @@ QJsonObject XSCClusterRankPlugin::createJsonTree(std::map<QString, int> speciesS
     QJsonObject valueStringReference;
 
     {
-    
+
         std::vector<float> numbers;
         std::vector<QString> leafnames;
 
         const std::unordered_map<std::string, int> clusteringTypeMap = {
-    {"Complete", HCLUST_METHOD_COMPLETE},
-    {"Average", HCLUST_METHOD_AVERAGE},
-    {"Median", HCLUST_METHOD_MEDIAN}
+    { "Complete", HCLUST_METHOD_COMPLETE },
+    { "Average", HCLUST_METHOD_AVERAGE },
+    { "Median", HCLUST_METHOD_MEDIAN }
         };
         std::string clusteringTypecurrentText = "Single";  //"Single","Complete", "Average","Median"
         int opt_method = clusteringTypeMap.count(clusteringTypecurrentText) ? clusteringTypeMap.at(clusteringTypecurrentText) : HCLUST_METHOD_SINGLE;
@@ -852,13 +857,13 @@ QJsonObject XSCClusterRankPlugin::createJsonTree(std::map<QString, int> speciesS
         //qDebug()<<"Newick format: " << QString::fromStdString(newick);
         newick += ';';
         //std::cout << "Newick format: " << newick << std::endl;
-        QString formattedtree = _settingsAction.createJsonTreeFromNewick(QString::fromStdString(newick),leafnames);
+        QString formattedtree = _settingsAction.createJsonTreeFromNewick(QString::fromStdString(newick), leafnames);
         valueStringReference = QJsonDocument::fromJson(formattedtree.toUtf8()).object();
-    delete[] distmat;
-    delete[] merge;
-    delete[] height;
-}
-    
+        delete[] distmat;
+        delete[] merge;
+        delete[] height;
+    }
+
 
     return valueStringReference;
 }
@@ -907,10 +912,10 @@ void XSCClusterRankPlugin::publishRightClickCluster(const QString& orderedCluste
     */
 }
 
-void XSCClusterRankPlugin::publishSelection(const std::vector<QString>& selectedIDs,const QString& topHselectedIDs)
+void XSCClusterRankPlugin::publishSelection(const std::vector<QString>& selectedIDs, const QString& topHselectedIDs)
 {
-    auto clusterDataset= _settingsAction.getHierarchyBottomClusterDataset().getCurrentDataset();
-    auto pointsDataset= _settingsAction.getMainPointsDataset().getCurrentDataset();
+    auto clusterDataset = _settingsAction.getHierarchyBottomClusterDataset().getCurrentDataset();
+    auto pointsDataset = _settingsAction.getMainPointsDataset().getCurrentDataset();
     //auto speciesDataset= _settingsAction.getSpeciesNamesDataset().getCurrentDataset();
     std::vector<std::uint32_t> selectedIndices;
 
@@ -930,7 +935,7 @@ void XSCClusterRankPlugin::publishSelection(const std::vector<QString>& selected
 
         if (isValid)
         {
-           
+
             if (!selectedIDs.empty())
             {
 
@@ -956,6 +961,7 @@ void XSCClusterRankPlugin::publishSelection(const std::vector<QString>& selected
 
             }
             _pauseSelectionEvent = true;
+            ignoreOwnSelectionEcho();
             //qDebug() << topHselectedIDs;
             _settingsAction.getTopSelectedHierarchyStatus().setString(topHselectedIDs);
             //need to trigger remove table selection event first
@@ -976,31 +982,31 @@ void XSCClusterRankPlugin::publishSelection(const std::vector<QString>& selected
     {
         qDebug() << "Datasets not valid";
     }
-    
 
-    
-    if (_settingsAction.getFilterEditTreeDataset().getCurrentDataset().isValid() && _settingsAction.getSpeciesNamesDataset().getCurrentDataset().isValid() && selectedIndices.size()>0 )
+
+
+    if (_settingsAction.getFilterEditTreeDataset().getCurrentDataset().isValid() && _settingsAction.getSpeciesNamesDataset().getCurrentDataset().isValid() && selectedIndices.size() > 0)
     {
-        
-        
+
+
         auto speciesDataset = mv::data().getDataset<Clusters>(_settingsAction.getSpeciesNamesDataset().getCurrentDataset().getDatasetId());
         std::map<QString, int> speciesSelectedIndicesCounter;
         auto speciesData = speciesDataset->getClusters();
         for (auto species : speciesData)
         {
-            auto speciesNameKey= species.getName();
+            auto speciesNameKey = species.getName();
             int speciescellCountValue = 0;
-            auto indices= species.getIndices();
+            auto indices = species.getIndices();
             speciescellCountValue = std::count_if(selectedIndices.begin(), selectedIndices.end(), [&](const auto& element) {
                 return std::find(indices.begin(), indices.end(), element) != indices.end();
                 });
-            
+
             speciesSelectedIndicesCounter.insert({ speciesNameKey, speciescellCountValue });
         }
 
-        if ( speciesSelectedIndicesCounter.size()>0)
+        if (speciesSelectedIndicesCounter.size() > 0)
         {
-           // qDebug() << "XSCClusterRankPlugin::publishSelection: Send selection to core";
+            // qDebug() << "XSCClusterRankPlugin::publishSelection: Send selection to core";
             QJsonObject valueStringReference = createJsonTree(speciesSelectedIndicesCounter);
             //print speciesSelectedIndicesCounter
             /*
@@ -1041,6 +1047,24 @@ void XSCClusterRankPlugin::publishSelection(const std::vector<QString>& selected
     //    events().notifyDatasetDataSelectionChanged(_currentDataSet->getSourceDataset<DatasetImpl>());
     //else
     //    events().notifyDatasetDataSelectionChanged(_currentDataSet);
+
+    // The work above can take a moment on large selections; the echo of the click is delivered after this function returns,
+    // so the period during which it is ignored starts again here.
+    ignoreOwnSelectionEcho();
+}
+
+void XSCClusterRankPlugin::ignoreOwnSelectionEcho()
+{
+    _ignoreOwnSelectionEcho = true;
+    const quint64 generation = ++_ownSelectionGeneration;
+
+    // The reset is a timer event: it is processed after the selection events that are already queued, so the echo of the click
+    // is still recognised even when the application was busy for a while. A newer click restarts the period (generation).
+    QTimer::singleShot(600, this, [this, generation]() {
+        if (generation == _ownSelectionGeneration) {
+            _ignoreOwnSelectionEcho = false;
+        }
+        });
 }
 /*
 namespace  local
@@ -1134,7 +1158,7 @@ namespace  local
 
 void XSCClusterRankPlugin::createHierarchy(qsizetype index, const Dataset<DatasetImpl>& dataset)
 {
-    
+
     const qsizetype NrOfDatasets = _selectedDatasetsAction.size();
 
 
@@ -1181,7 +1205,7 @@ void XSCClusterRankPlugin::createHierarchy(qsizetype index, const Dataset<Datase
     if (finalLevelItems.count())
         _selectedOptionsAction.selectOption(finalLevelItems.first());
 
-   
+
 }
  */
 
@@ -1241,15 +1265,15 @@ mv::gui::PluginTriggerActions XSCClusterRankPluginFactory::getPluginTriggerActio
     bool isValidDataset = false;
     const auto getPluginInstance = [this]() -> XSCClusterRankPlugin* {
         return dynamic_cast<XSCClusterRankPlugin*>(plugins().requestViewPlugin(getKind()));
-    };
+        };
 
     const auto numberOfDatasets = datasets.count();
 
     if (numberOfDatasets == 1 && PluginFactory::areAllDatasetsOfTheSameType(datasets, PointType)) {
 
-        auto dataset= datasets.first();
-        auto children = dataset->getChildren({ClusterType},false);
-        if (children.size()>1)
+        auto dataset = datasets.first();
+        auto children = dataset->getChildren({ ClusterType }, false);
+        if (children.size() > 1)
         {
             isValidDataset = true;
         }
