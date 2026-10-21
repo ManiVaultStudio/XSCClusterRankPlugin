@@ -4,7 +4,7 @@
 
 #include <Dataset.h>
 #include <PointData/PointData.h>
-//#include <ClusterData/ClusterData.h>
+#include <ClusterData/ClusterData.h>
 //#include <XSCTreeData/XSCTreeData.h>
 #include <widgets/DropWidget.h>
 #include "SettingsAction.h"
