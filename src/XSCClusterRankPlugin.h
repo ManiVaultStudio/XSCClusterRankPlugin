@@ -5,7 +5,7 @@
 #include <Dataset.h>
 #include <PointData/PointData.h>
 #include <ClusterData/ClusterData.h>
-//#include <XSCTreeData/XSCTreeData.h>
+#include <XSCTreeData/XSCTreeData.h>
 #include <widgets/DropWidget.h>
 #include "SettingsAction.h"
 #include <QWidget>
@@ -100,9 +100,9 @@ protected:
 class XSCClusterRankPluginFactory : public ViewPluginFactory
 {
     Q_INTERFACES(mv::plugin::ViewPluginFactory mv::plugin::PluginFactory)
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID   "studio.manivault.XSCClusterRankPlugin"
-                      FILE  "XSCClusterRankPlugin.json")
+        Q_OBJECT
+        Q_PLUGIN_METADATA(IID   "studio.manivault.XSCClusterRankPlugin"
+            FILE  "XSCClusterRankPlugin.json")
 
 public:
 
