@@ -36,7 +36,7 @@ public:
 
     /** Destructor */
     ~XSCClusterRankPlugin() override = default;
-    
+
     /** This function is called by the core after the view plugin has been created */
     void init() override;
 
@@ -55,6 +55,13 @@ private:
     void publishClusterOrder(const QString& selectedIDs);
     void publishRightClickCluster(const QString& selectedIDs);
     QJsonObject createJsonTree(std::map<QString, int> speciesSelectedIndicesCounter);
+
+    /**
+     * Called when this plugin has published a selection (a box of the chart was clicked).
+     * The selection events that this causes reach the plugin a little later, after _pauseSelectionEvent was reset; during a
+     * short period they are recognised as the echo of the plugin's own click and must not remove the outline of the box.
+     */
+    void ignoreOwnSelectionEcho();
     QString getCurrentDataSetID() const;
     SettingsAction& getSettingsAction() { return _settingsAction; }
 
@@ -72,14 +79,16 @@ public: // Serialization
      */
     Q_INVOKABLE QVariantMap toVariantMap() const override;
 protected:
-    ChartWidget*            _chartWidget;       // WebWidget that sets up the HTML page
+    ChartWidget* _chartWidget;       // WebWidget that sets up the HTML page
     SettingsAction      _settingsAction;    // Settings action for the plugin
-    DropWidget*             _dropWidget;        // Widget for drag and drop behavior
+    DropWidget* _dropWidget;        // Widget for drag and drop behavior
     mv::Dataset<Points>   _currentDataSet;    // Reference to currently shown data set
     //mv::Dataset<Clusters> _clusterDataset;    // Reference to the cluster dataset
     mv::Dataset<Points>   _embeddingDataset; // Reference to the low-dimensional t-SNE dataset
     //Dataset<XSCTree>    _mainTreeDataset; // Reference to the main tree dataset
     bool _pauseSelectionEvent = false;
+    bool _ignoreOwnSelectionEcho = false;      // the selection events caused by our own publishSelection() are still to be expected
+    quint64 _ownSelectionGeneration = 0;       // identifies the latest publishSelection() (a later click restarts the period)
     QVariantList _dataForChart;
 };
 
@@ -91,9 +100,9 @@ protected:
 class XSCClusterRankPluginFactory : public ViewPluginFactory
 {
     Q_INTERFACES(mv::plugin::ViewPluginFactory mv::plugin::PluginFactory)
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID   "studio.manivault.XSCClusterRankPlugin"
-                      FILE  "XSCClusterRankPlugin.json")
+        Q_OBJECT
+        Q_PLUGIN_METADATA(IID   "studio.manivault.XSCClusterRankPlugin"
+            FILE  "XSCClusterRankPlugin.json")
 
 public:
 
@@ -102,7 +111,7 @@ public:
 
     /** Destructor */
     ~XSCClusterRankPluginFactory() override {}
-    
+
     /** Creates an instance of the XSCClusterRank view plugin */
     ViewPlugin* produce() override;
 
