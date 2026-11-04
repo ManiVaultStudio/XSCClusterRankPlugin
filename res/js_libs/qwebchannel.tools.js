@@ -21,7 +21,7 @@ try {
         notifyBridgeAvailable();
     });
 } catch (error) {
-    log("Cross-Species Comparison Cluster Hierarchy View: qwebchannel: could not connect qt");
+    log("XSC Cluster Rank: qwebchannel: could not connect qt");
 }
 
 // The slot js_available is defined by ManiVault's WebWidget and will
@@ -32,7 +32,7 @@ function notifyBridgeAvailable() {
         QtBridge.js_available();
     }
     else {
-        log("Cross-Species Comparison Cluster Hierarchy View: qwebchannel: QtBridge is not available - something went wrong");
+        log("XSC Cluster Rank: qwebchannel: QtBridge is not available - something went wrong");
     }
 
 }
@@ -84,7 +84,7 @@ function passRightClickToQt(dat) {
 
 // utility function: pipe errors to log
 window.onerror = function (msg, url, num) {
-    log("Cross-Species Comparison Cluster Hierarchy View: qwebchannel: Error: " + msg + "\nURL: " + url + "\nLine: " + num);
+    log("XSC Cluster Rank: qwebchannel: Error: " + msg + "\nURL: " + url + "\nLine: " + num);
 };
 
 // utility function: auto log for Qt and console

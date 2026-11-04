@@ -704,7 +704,7 @@ SettingsAction::SettingsAction(XSCClusterRankPlugin& XSCClusterRankPlugin) :
     _topSelectedHierarchyStatus(this, "Top Selected Hierarchy Status")
     //_treeSimilarity(this, "Tree Similarity")
 {
-    setSerializationName("CSCCR:Cross-Species Comparison Cluster Rank Settings");
+    setSerializationName("CSCCR:XSC Cluster Rank Settings");
     _mainPointsDataset.setSerializationName("CSCCR:MainPointsDataset");
     _embeddingDataset.setSerializationName("CSCCR:EmbeddingDataset");
     _topHierarchyRelativeClusterCountInclusion.setSerializationName("CSCCR:TopHierarchyRelativeClusterCountInclusion");
@@ -728,7 +728,7 @@ SettingsAction::SettingsAction(XSCClusterRankPlugin& XSCClusterRankPlugin) :
     _topSelectedHierarchyStatus.setSerializationName("CSCCR:TopSelectedHierarchyStatus");
     //_treeSimilarity.setSerializationName("CSCCR:TreeSimilarity");
 
-    setText("Cross-Species Comparison Cluster Rank Settings");
+    setText("XSC Cluster Rank Settings");
     _mainPointsDataset.setToolTip("Point dataset whose cells are assigned to the hierarchy clusters.");
     _embeddingDataset.setToolTip("Embedding of the same points. It is used to keep selections linked to the scatterplot.");
     _topHierarchyRelativeClusterCountInclusion.setToolTip("Choose which top-level clusters are included when selected-cell counts are normalized.");

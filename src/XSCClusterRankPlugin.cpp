@@ -1254,8 +1254,8 @@ void XSCClusterRankPlugin::fromVariantMap(const QVariantMap& variantMap)
 {
     ViewPlugin::fromVariantMap(variantMap);
 
-    mv::util::variantMapMustContain(variantMap, "CSCCR:Cross-Species Comparison Cluster Rank Settings");
-    _settingsAction.fromVariantMap(variantMap["CSCCR:Cross-Species Comparison Cluster Rank Settings"].toMap());
+    mv::util::variantMapMustContain(variantMap, "CSCCR:XSC Cluster Rank Settings");
+    _settingsAction.fromVariantMap(variantMap["CSCCR:XSC Cluster Rank Settings"].toMap());
 
 
 }
@@ -1312,7 +1312,7 @@ mv::gui::PluginTriggerActions XSCClusterRankPluginFactory::getPluginTriggerActio
 
         if (isValidDataset)
         {
-            auto pluginTriggerAction = new PluginTriggerAction(const_cast<XSCClusterRankPluginFactory*>(this), this, "Cross-Species Comparison Cluster Rank View", "Cross-Species Comparison Cluster Rank visualization", StyledIcon("sitemap"), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
+            auto pluginTriggerAction = new PluginTriggerAction(const_cast<XSCClusterRankPluginFactory*>(this), this, "XSC Cluster Rank View", "XSC Cluster Rank visualization", StyledIcon("sitemap"), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
                 for (auto dataset : datasets)
                     getPluginInstance()->loadData(Datasets({ dataset }));
 

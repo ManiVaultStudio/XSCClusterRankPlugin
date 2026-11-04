@@ -72,7 +72,7 @@ ChartWidget::ChartWidget(XSCClusterRankPlugin* viewJSPlugin):
     _viewJSPlugin(viewJSPlugin),
     _comObject()
 {
-    // For more info on drag&drop behavior, see the Cross-Species Comparison Cluster Rank View project
+    // For more info on drag&drop behavior, see the XSC Cluster Rank project
     setAcceptDrops(true);
 
     // Ensure linking to the resources defined in res/XSCClusterRank_chart.qrc
