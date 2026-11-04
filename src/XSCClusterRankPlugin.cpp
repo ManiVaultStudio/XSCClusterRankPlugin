@@ -29,6 +29,8 @@
 #include <QString>
 #include <cmath>
 #include <algorithm>
+#include <cstdint>
+#include <map>
 #include <sstream>
 #include <stack>
 #include "lib/Distance/annoylib.h"
@@ -38,12 +40,42 @@ Q_PLUGIN_METADATA(IID "studio.manivault.XSCClusterRankPlugin")
 
 using namespace mv;
 
-struct PointClusterNames
+namespace {
+
+std::vector<std::uint64_t> makeSelectionMask(const std::vector<std::uint32_t>& selectedIndices)
 {
-    QString topHierarchy;
-    QString middleHierarchy;
-    QString bottomHierarchy;
-};
+    const std::size_t pointSpan = selectedIndices.empty()
+        ? 0
+        : static_cast<std::size_t>(*std::max_element(selectedIndices.begin(), selectedIndices.end())) + 1;
+    std::vector<std::uint64_t> selected((pointSpan + 63) / 64, 0);
+    for (const std::uint32_t index : selectedIndices) {
+        selected[static_cast<std::size_t>(index) >> 6] |= std::uint64_t(1) << (index & 63);
+    }
+    return selected;
+}
+
+bool isSelected(const std::vector<std::uint64_t>& selected, std::uint32_t index)
+{
+    const std::size_t word = static_cast<std::size_t>(index) >> 6;
+    return word < selected.size() && (selected[word] & (std::uint64_t(1) << (index & 63))) != 0;
+}
+
+template<typename ClusterCollection>
+std::map<QString, int> countSelectedByCluster(const ClusterCollection& clusters,
+    const std::vector<std::uint32_t>& selectedIndices)
+{
+    const auto selected = makeSelectionMask(selectedIndices);
+    std::map<QString, int> counts;
+    for (const auto& cluster : clusters) {
+        int count = 0;
+        for (const std::uint32_t index : cluster.getIndices())
+            count += isSelected(selected, index) ? 1 : 0;
+        counts.emplace(cluster.getName(), count);
+    }
+    return counts;
+}
+
+} // namespace
 
 XSCClusterRankPlugin::XSCClusterRankPlugin(const PluginFactory* factory) :
     ViewPlugin(factory),
@@ -329,21 +361,13 @@ void XSCClusterRankPlugin::init()
 
 
                 auto speciesDataset = mv::data().getDataset<Clusters>(_settingsAction.getSpeciesNamesDataset().getCurrentDataset().getDatasetId());
-                std::map<QString, int> speciesSelectedIndicesCounter;
                 auto speciesData = speciesDataset->getClusters();
-                for (auto species : speciesData)
-                {
-                    auto speciesNameKey = species.getName();
-                    int speciescellCountValue = 0;
-                    auto indices = species.getIndices();
-                    speciescellCountValue = std::count_if(selectedIndices.begin(), selectedIndices.end(), [&](const auto& element) {
-                        return std::find(indices.begin(), indices.end(), element) != indices.end();
-                        });
+                auto speciesSelectedIndicesCounter = countSelectedByCluster(speciesData, selectedIndices);
+                for (auto& speciesCount : speciesSelectedIndicesCounter) {
                     if (relativeCellcount != 0)
                     {
-                        speciescellCountValue = (speciescellCountValue) / relativeCellcount;
+                        speciesCount.second = speciesCount.second / relativeCellcount;
                     }
-                    speciesSelectedIndicesCounter.insert({ speciesNameKey, speciescellCountValue });
                 }
 
                 if (speciesSelectedIndicesCounter.size() > 0)
@@ -477,30 +501,28 @@ void XSCClusterRankPlugin::hierarchyStrokeforSelected()
             std::vector<std::uint32_t> selectedIndices = pointsDataset->getSelectionIndices();
             if (selectedIndices.size() > 0) { // Get the selection indices from the points dataset
 
-                // Sort the selected indices
-                std::sort(selectedIndices.begin(), selectedIndices.end());
+                const auto selectedMask = makeSelectionMask(selectedIndices);
 
                 // Get the clusters dataset
                 auto clustersDataset = mv::data().getDataset<Clusters>(clusterDataset->getId());
                 auto clusters = clustersDataset->getClusters();
 
-                for (auto cluster : clusters) {
+                for (const auto& cluster : clusters) {
                     auto clusterName = cluster.getName();
-                    auto clusterIndices = cluster.getIndices();
-                    // Sort the cluster indices
-                    std::sort(clusterIndices.begin(), clusterIndices.end());
+                    const auto& clusterIndices = cluster.getIndices();
 
                     // Debug: Print selectedIndices and clusterIndices
                    // qDebug() << "Selected Indices: " << selectedIndices;
                     //qDebug() << "Cluster Indices for " << clusterName << ": " << clusterIndices;
 
                     // Check if all indices of clusterIndices are present in selectedIndices
-                    bool allPresent = std::includes(selectedIndices.begin(), selectedIndices.end(), clusterIndices.begin(), clusterIndices.end());
+                    int selectedCount = 0;
+                    for (const std::uint32_t index : clusterIndices)
+                        selectedCount += isSelected(selectedMask, index) ? 1 : 0;
+                    const bool allPresent = selectedCount == clusterIndices.size();
 
                     // Check if at least one index of clusterIndices is present in selectedIndices
-                    bool atLeastOnePresent = std::any_of(clusterIndices.begin(), clusterIndices.end(), [&selectedIndices](uint32_t index) {
-                        return std::binary_search(selectedIndices.begin(), selectedIndices.end(), index);
-                        });
+                    const bool atLeastOnePresent = selectedCount > 0;
 
                     // If all indices are present
                     if (allPresent) {
@@ -602,43 +624,64 @@ void XSCClusterRankPlugin::computeHierarchy()
 
         if (valid)
         {
-            std::map<int, PointClusterNames> pointClusterNamesMap;
             std::map<QString, std::pair<QColor, int>> topHierarchyMap;
             std::map<QString, std::pair<QColor, int>> middleHierarchyMap;
             std::map<QString, std::pair<QColor, int>> bottomHierarchyMap;
             std::map<QString, std::pair<QString, QString>> hierarchyMap;
 
-            auto updateClusterNamesAndHierarchyMap = [&](const auto& clusters, auto updateFunc, auto& hierarchyMap) {
+            const std::size_t pointCount = static_cast<std::size_t>(mainPoints->getNumPoints());
+            std::vector<std::int32_t> topAssignment(pointCount, -1);
+            std::vector<std::int32_t> middleAssignment(pointCount, -1);
+            std::vector<std::int32_t> bottomAssignment(pointCount, -1);
+            std::vector<QString> topNames;
+            std::vector<QString> middleNames;
+            std::vector<QString> bottomNames;
+
+            auto updateClusterAssignments = [&](const auto& clusters, auto& assignments, auto& names, auto& colorMap) {
                 for (const auto& cluster : clusters->getClusters())
                 {
                     auto clusterName = cluster.getName();
-                    auto clusterIndices = cluster.getIndices();
-                    for (auto index : clusterIndices)
+                    const auto& clusterIndices = cluster.getIndices();
+                    const auto clusterIndex = static_cast<std::int32_t>(names.size());
+                    names.push_back(clusterName);
+                    for (const auto index : clusterIndices)
                     {
-                        updateFunc(pointClusterNamesMap[index], clusterName);
+                        if (static_cast<std::size_t>(index) < pointCount)
+                            assignments[static_cast<std::size_t>(index)] = clusterIndex;
                     }
                     auto clusterColor = cluster.getColor();
                     if (clusterColor.isValid()) {
-                        hierarchyMap.emplace(clusterName, std::make_pair(clusterColor.name(), clusterIndices.size()));
+                        colorMap.emplace(clusterName, std::make_pair(QColor(clusterColor.name()), static_cast<int>(clusterIndices.size())));
                     }
                     else {
-                        hierarchyMap.emplace(clusterName, std::make_pair("grey", clusterIndices.size()));
+                        colorMap.emplace(clusterName, std::make_pair(QColor("grey"), static_cast<int>(clusterIndices.size())));
                     }
                 }
                 };
 
-            updateClusterNamesAndHierarchyMap(topHierarchyClusters, [](PointClusterNames& names, const QString& name) { names.topHierarchy = name; }, topHierarchyMap);
-            updateClusterNamesAndHierarchyMap(middleHierarchyClusters, [](PointClusterNames& names, const QString& name) { names.middleHierarchy = name; }, middleHierarchyMap);
-            updateClusterNamesAndHierarchyMap(bottomHierarchyClusters, [](PointClusterNames& names, const QString& name) { names.bottomHierarchy = name; }, bottomHierarchyMap);
+            updateClusterAssignments(topHierarchyClusters, topAssignment, topNames, topHierarchyMap);
+            updateClusterAssignments(middleHierarchyClusters, middleAssignment, middleNames, middleHierarchyMap);
+            updateClusterAssignments(bottomHierarchyClusters, bottomAssignment, bottomNames, bottomHierarchyMap);
 
-            for (const auto& pair : pointClusterNamesMap) {
-                auto bottomString = pair.second.bottomHierarchy;
-                auto middleString = pair.second.middleHierarchy;
-                auto topString = pair.second.topHierarchy;
+            // Preserve ascending point-index overwrite order without storing a map node
+            // and three QStrings for every populated point.
+            for (std::size_t point = 0; point < pointCount; ++point) {
+                const auto topIndex = topAssignment[point];
+                const auto middleIndex = middleAssignment[point];
+                const auto bottomIndex = bottomAssignment[point];
+                if (topIndex < 0 && middleIndex < 0 && bottomIndex < 0)
+                    continue;
 
-                hierarchyMap[bottomString].first = middleString;
-                hierarchyMap[bottomString].second = topString;
+                const QString bottomName = bottomIndex >= 0 ? bottomNames[static_cast<std::size_t>(bottomIndex)] : QString();
+                const QString middleName = middleIndex >= 0 ? middleNames[static_cast<std::size_t>(middleIndex)] : QString();
+                const QString topName = topIndex >= 0 ? topNames[static_cast<std::size_t>(topIndex)] : QString();
+                hierarchyMap[bottomName].first = middleName;
+                hierarchyMap[bottomName].second = topName;
             }
+
+            std::vector<std::int32_t>().swap(topAssignment);
+            std::vector<std::int32_t>().swap(middleAssignment);
+            std::vector<std::int32_t>().swap(bottomAssignment);
 
             std::map<std::pair<QString, QString>, std::map<std::pair<QString, QString>, std::map<std::pair<QString, QString>, int>>> finalHierarchyMap;
 
@@ -990,19 +1033,8 @@ void XSCClusterRankPlugin::publishSelection(const std::vector<QString>& selected
 
 
         auto speciesDataset = mv::data().getDataset<Clusters>(_settingsAction.getSpeciesNamesDataset().getCurrentDataset().getDatasetId());
-        std::map<QString, int> speciesSelectedIndicesCounter;
         auto speciesData = speciesDataset->getClusters();
-        for (auto species : speciesData)
-        {
-            auto speciesNameKey = species.getName();
-            int speciescellCountValue = 0;
-            auto indices = species.getIndices();
-            speciescellCountValue = std::count_if(selectedIndices.begin(), selectedIndices.end(), [&](const auto& element) {
-                return std::find(indices.begin(), indices.end(), element) != indices.end();
-                });
-
-            speciesSelectedIndicesCounter.insert({ speciesNameKey, speciescellCountValue });
-        }
+        const auto speciesSelectedIndicesCounter = countSelectedByCluster(speciesData, selectedIndices);
 
         if (speciesSelectedIndicesCounter.size() > 0)
         {

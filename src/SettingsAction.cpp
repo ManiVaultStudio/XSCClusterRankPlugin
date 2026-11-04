@@ -690,14 +690,14 @@ SettingsAction::SettingsAction(XSCClusterRankPlugin& XSCClusterRankPlugin) :
     _geneNamesConnection(this, "Gene Names Connection"),
     _createPointSelectTree(this, "Create Point Select Tree"),
     _embeddingDataset(this, "Low Dim Embedding"),
-    _topHierarchyRelativeClusterCountInclusion(this, "Top Hierarchy Relative Cluster Count Inclusion"),
-    _statusChangedAction(this, "Status Changed"),
+    _topHierarchyRelativeClusterCountInclusion(this, "Limit processing to the top-level clusters that meet this relative size."),
+    _statusChangedAction(this, "Current hierarchy calculation status."),
     _removeTableSelection(this, "Remove Table Selection"),
     _clusterOrder(this, "Cluster Order"),
     _subsampleDataStart(this, "Subsample Data"),
     _subsampleByLevel(this, "Subsample By Level"),
-    _subsamplePercentValue(this, "Subsample Percent Value"),
-    _subsampleInplace(this, "Subsample Inplace"),
+    _subsamplePercentValue(this, "Percentage of points to keep when creating the sample."),
+    _subsampleInplace(this, "Replace the current point dataset with sampled points."),
     _generateTreeDataFilesPerClusterStart(this, "Generate Tree Data Files Per Cluster"),
     _rightClickedCluster(this, "Right Clicked Cluster"),
     _clearRightClickedCluster(this, "Clear Right Clicked Cluster"),
@@ -729,34 +729,34 @@ SettingsAction::SettingsAction(XSCClusterRankPlugin& XSCClusterRankPlugin) :
     //_treeSimilarity.setSerializationName("CSCCR:TreeSimilarity");
 
     setText("Cross-Species Comparison Cluster Rank Settings");
-    _mainPointsDataset.setToolTip("Main Points Dataset");
-    _embeddingDataset.setToolTip("Embedding Dataset");
-    _topHierarchyRelativeClusterCountInclusion.setToolTip("Top Hierarchy Relative Cluster Count Inclusion");
-    _statusChangedAction.setToolTip("Status Changed");
-    _hierarchyTopClusterDataset.setToolTip("Hierarchy Top Cluster Dataset");
-    _hierarchyMiddleClusterDataset.setToolTip("Hierarchy Middle Cluster Dataset");
-    _hierarchyBottomClusterDataset.setToolTip("Hierarchy Bottom Cluster Dataset");
+    _mainPointsDataset.setToolTip("Point dataset whose cells are assigned to the hierarchy clusters.");
+    _embeddingDataset.setToolTip("Embedding of the same points. It is used to keep selections linked to the scatterplot.");
+    _topHierarchyRelativeClusterCountInclusion.setToolTip("Choose which top-level clusters are included when selected-cell counts are normalized.");
+    _statusChangedAction.setToolTip("Link status used to coordinate selection updates with GeneDetect.");
+    _hierarchyTopClusterDataset.setToolTip("Cluster dataset for the top level. It must belong to the selected point dataset.");
+    _hierarchyMiddleClusterDataset.setToolTip("Cluster dataset for the middle level. It must belong to the selected point dataset.");
+    _hierarchyBottomClusterDataset.setToolTip("Cluster dataset for the leaf level. It must belong to the selected point dataset.");
     _selectedClusterNamesVariant.setToolTip("Selected Cluster Names Variant");
     //_filteredGeneNamesVariant.setToolTip("Filtered Gene Names Variant");
     //_updateButtonForGeneFiltering.setToolTip("Filter Genes Trigger");
-    _speciesNamesDataset.setToolTip("Species Names Dataset");
-    _filterEditTreeDataset.setToolTip("Filter Tree Dataset");
-    _createPointSelectTree.setToolTip("Create Point Select Tree Trigger");
+    _speciesNamesDataset.setToolTip("Species clusters used to summarize how many selected cells belong to each species.");
+    _filterEditTreeDataset.setToolTip("Species tree that receives the selected-cell counts for GeneDetect.");
+    _createPointSelectTree.setToolTip("Send the current point selection to the species tree and update GeneDetect.");
     //_topNGenesFilter.setToolTip("Top N Genes Filter");
     //_topNGenesFilter.initialize(1, 100, 10);
-    _referenceTreeDataset.setToolTip("Reference Tree Dataset");
-    _geneNamesConnection.setToolTip("Gene Names Connection");
-    _clusterOrder.setToolTip("Cluster Order");
-    _rightClickedCluster.setToolTip("Right Clicked Cluster");
-    _clearRightClickedCluster.setToolTip("Clear Right Clicked Cluster");
-    _topSelectedHierarchyStatus.setToolTip("Top Selected Hierarchy Status");
+    _referenceTreeDataset.setToolTip("Reference species tree used to order species in the hierarchy view.");
+    _geneNamesConnection.setToolTip("Gene selection shared with GeneDetect.");
+    _clusterOrder.setToolTip("Current cluster order used by the hierarchy chart.");
+    _rightClickedCluster.setToolTip("Cluster most recently opened from the chart.");
+    _clearRightClickedCluster.setToolTip("Clear the current chart cluster highlight.");
+    _topSelectedHierarchyStatus.setToolTip("Selected top-level hierarchy item shared with GeneDetect.");
     _topSelectedHierarchyStatus.setString("");
     _removeTableSelection.setToolTip("Remove Table Selection");
-    _subsampleDataStart.setToolTip("Subsample Data");
-    _subsampleByLevel.setToolTip("Subsample By Level");
-    _subsamplePercentValue.setToolTip("Subsample Percent Value");
-    _subsampleInplace.setToolTip("Subsample Inplace");
-    _generateTreeDataFilesPerClusterStart.setToolTip("Generate Tree Data Files Per Cluster");
+    _subsampleDataStart.setToolTip("Create a smaller dataset from the chosen hierarchy level.");
+    _subsampleByLevel.setToolTip("Choose whether to sample top, middle, or leaf clusters.");
+    _subsamplePercentValue.setToolTip("Percentage of points to keep from each selected cluster.");
+    _subsampleInplace.setToolTip("Replace the current point dataset with sampled points instead of adding a separate dataset.");
+    _generateTreeDataFilesPerClusterStart.setToolTip("Export one tree-data file for each cluster.");
     //_treeSimilarity.setToolTip("Tree Similarity");
    // _treeSimilarity.initialize(0.0, 1.0, 1.0, 2);
     _subsamplePercentValue.initialize(1.00, 100.00, 15.00, 2);
