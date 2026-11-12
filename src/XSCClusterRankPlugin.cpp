@@ -220,6 +220,9 @@ void XSCClusterRankPlugin::init()
         {
             if (_settingsAction.getStatusChangedAction().getString() == "C")
             {
+                _completedEmbeddingDatasetId = _embeddingDataset.isValid() ? _embeddingDataset.getDatasetId() : QString{};
+                _completedEmbeddingSelection = _embeddingDataset.isValid() ? _embeddingDataset->getSelectionIndices() : std::vector<std::uint32_t>{};
+                std::sort(_completedEmbeddingSelection.begin(), _completedEmbeddingSelection.end());
                 hierarchyStrokeforSelected();
             }
         };
@@ -234,6 +237,16 @@ void XSCClusterRankPlugin::init()
             // lower levels are marked, or when a selection comes from somewhere else).
             if (!_pauseSelectionEvent && !_ignoreOwnSelectionEcho)
             {
+                // Core polls for selection changes. An event can arrive after the
+                // update has already finished for the same selection.
+                if (_settingsAction.getStatusChangedAction().getString() == "C" &&
+                    _embeddingDataset.isValid() && _embeddingDataset.getDatasetId() == _completedEmbeddingDatasetId)
+                {
+                    auto selection = _embeddingDataset->getSelectionIndices();
+                    std::sort(selection.begin(), selection.end());
+                    if (selection == _completedEmbeddingSelection)
+                        return;
+                }
                 emit _chartWidget->getCommunicationObject().qt_js_removeClusterSelectionHighlight("Remove");
                 _settingsAction.getStatusChangedAction().setString("M");
             }

@@ -85,6 +85,8 @@ protected:
     mv::Dataset<Points>   _currentDataSet;    // Reference to currently shown data set
     //mv::Dataset<Clusters> _clusterDataset;    // Reference to the cluster dataset
     mv::Dataset<Points>   _embeddingDataset; // Reference to the low-dimensional t-SNE dataset
+    QString _completedEmbeddingDatasetId;
+    std::vector<std::uint32_t> _completedEmbeddingSelection;
     //Dataset<XSCTree>    _mainTreeDataset; // Reference to the main tree dataset
     bool _pauseSelectionEvent = false;
     bool _ignoreOwnSelectionEcho = false;      // the selection events caused by our own publishSelection() are still to be expected
