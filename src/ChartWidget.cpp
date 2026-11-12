@@ -3,6 +3,10 @@
 
 #include <QDebug>
 #include <QString>
+#include <QWebEnginePage>
+#include <QWebEngineView>
+#include <Application.h>
+#include <CoreInterface.h>
 
 using namespace mv;
 using namespace mv::gui;
@@ -18,6 +22,7 @@ ChartCommObject::ChartCommObject() :
 
 void ChartCommObject::js_qt_passSelectionToQt(const QString& data){
     _selectedIDsFromJS.clear();
+    _selectedTopIDSFromJS.clear();
    
 
     if (data!="")
@@ -68,6 +73,18 @@ void ChartCommObject::js_qt_passRightClickToQt(const QString& data) {
 // ChartWidget
 // =============================================================================
 
+ChartWidget::~ChartWidget()
+{
+    shutdown();
+}
+
+void ChartWidget::shutdown()
+{
+    getView()->stop();
+    getPage()->setWebChannel(nullptr);
+    disconnect(&_comObject, nullptr, nullptr, nullptr);
+}
+
 ChartWidget::ChartWidget(XSCClusterRankPlugin* viewJSPlugin):
     _viewJSPlugin(viewJSPlugin),
     _comObject()
@@ -81,6 +98,7 @@ ChartWidget::ChartWidget(XSCClusterRankPlugin* viewJSPlugin):
     // ManiVault and Qt create a "QtBridge" object on the js side which represents _comObject
     // there, we can connect the signals qt_js_* and call the slots js_qt_* from our communication object
     init(&_comObject);
+    connect(mv::Application::core(), &mv::CoreInterface::aboutToBeDestroyed, this, &ChartWidget::shutdown);
 
     layout()->setContentsMargins(0, 0, 0, 0);
 }

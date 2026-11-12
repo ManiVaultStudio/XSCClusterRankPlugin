@@ -57,6 +57,8 @@ public:
     ChartWidget(XSCClusterRankPlugin* viewJSPlugin);
 
     ChartCommObject& getCommunicationObject() { return _comObject; };
+    ~ChartWidget() override;
+    void shutdown();
 
 private slots:
     /** Is invoked when the js side calls js_available of the mv::gui::WebCommunicationObject (ChartCommObject) 

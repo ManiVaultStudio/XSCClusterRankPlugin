@@ -96,6 +96,7 @@ namespace mv
 
     public:
         SettingsAction(XSCClusterRankPlugin& XSCClusterRankPlugins);
+        ~SettingsAction() override;
 
 public: // Action getters
 
