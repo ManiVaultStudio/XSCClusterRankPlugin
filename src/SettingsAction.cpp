@@ -1,3 +1,4 @@
+#include "QtTooltipKit.h"
 #include "SettingsAction.h"
 #include "XSCClusterRankPlugin.h"
 #include <vector>
@@ -734,34 +735,35 @@ SettingsAction::SettingsAction(XSCClusterRankPlugin& XSCClusterRankPlugin) :
     //_treeSimilarity.setSerializationName("CSCCR:TreeSimilarity");
 
     setText("XSC Cluster Rank Settings");
-    _mainPointsDataset.setToolTip("Point dataset whose cells are assigned to the hierarchy clusters.");
-    _embeddingDataset.setToolTip("Embedding of the same points. It is used to keep selections linked to the scatterplot.");
-    _topHierarchyRelativeClusterCountInclusion.setToolTip("Choose which top-level clusters are included when selected-cell counts are normalized.");
-    _statusChangedAction.setToolTip("Link status used to coordinate selection updates with GeneDetect.");
-    _hierarchyTopClusterDataset.setToolTip("Cluster dataset for the top level. It must belong to the selected point dataset.");
-    _hierarchyMiddleClusterDataset.setToolTip("Cluster dataset for the middle level. It must belong to the selected point dataset.");
-    _hierarchyBottomClusterDataset.setToolTip("Cluster dataset for the leaf level. It must belong to the selected point dataset.");
-    _selectedClusterNamesVariant.setToolTip("Selected Cluster Names Variant");
+    _mainPointsDataset.setIconByName("database");
+    qttooltipkit::set(_mainPointsDataset, tr("Main point dataset"), tr("Choose the cells assigned to the hierarchy. Use the same source for the cluster levels and scatterplot embedding."));
+    qttooltipkit::set(_embeddingDataset, _embeddingDataset.text(), tr("Embedding of the same points. It is used to keep selections linked to the scatterplot."));
+    qttooltipkit::set(_topHierarchyRelativeClusterCountInclusion, _topHierarchyRelativeClusterCountInclusion.text(), tr("Choose which top-level clusters are included when selected-cell counts are normalized."));
+    qttooltipkit::set(_statusChangedAction, _statusChangedAction.text(), tr("Link status used to coordinate selection updates with GeneDetect."));
+    qttooltipkit::set(_hierarchyTopClusterDataset, _hierarchyTopClusterDataset.text(), tr("Cluster dataset for the top level. It must belong to the selected point dataset."));
+    qttooltipkit::set(_hierarchyMiddleClusterDataset, _hierarchyMiddleClusterDataset.text(), tr("Cluster dataset for the middle level. It must belong to the selected point dataset."));
+    qttooltipkit::set(_hierarchyBottomClusterDataset, _hierarchyBottomClusterDataset.text(), tr("Cluster dataset for the leaf level. It must belong to the selected point dataset."));
+    qttooltipkit::set(_selectedClusterNamesVariant, tr("Selected clusters"), tr("Cluster names shared with linked analysis views."));
     //_filteredGeneNamesVariant.setToolTip("Filtered Gene Names Variant");
     //_updateButtonForGeneFiltering.setToolTip("Filter Genes Trigger");
-    _speciesNamesDataset.setToolTip("Species clusters used to summarize how many selected cells belong to each species.");
-    _filterEditTreeDataset.setToolTip("Species tree that receives the selected-cell counts for GeneDetect.");
-    _createPointSelectTree.setToolTip("Send the current point selection to the species tree and update GeneDetect.");
+    qttooltipkit::set(_speciesNamesDataset, _speciesNamesDataset.text(), tr("Species clusters used to summarize how many selected cells belong to each species."));
+    qttooltipkit::set(_filterEditTreeDataset, _filterEditTreeDataset.text(), tr("Species tree that receives the selected-cell counts for GeneDetect."));
+    qttooltipkit::set(_createPointSelectTree, _createPointSelectTree.text(), tr("Send the current point selection to the species tree and update GeneDetect."));
     //_topNGenesFilter.setToolTip("Top N Genes Filter");
     //_topNGenesFilter.initialize(1, 100, 10);
-    _referenceTreeDataset.setToolTip("Reference species tree used to order species in the hierarchy view.");
-    _geneNamesConnection.setToolTip("Gene selection shared with GeneDetect.");
-    _clusterOrder.setToolTip("Current cluster order used by the hierarchy chart.");
-    _rightClickedCluster.setToolTip("Cluster most recently opened from the chart.");
-    _clearRightClickedCluster.setToolTip("Clear the current chart cluster highlight.");
-    _topSelectedHierarchyStatus.setToolTip("Selected top-level hierarchy item shared with GeneDetect.");
+    qttooltipkit::set(_referenceTreeDataset, _referenceTreeDataset.text(), tr("Reference species tree used to order species in the hierarchy view."));
+    qttooltipkit::set(_geneNamesConnection, _geneNamesConnection.text(), tr("Gene selection shared with GeneDetect."));
+    qttooltipkit::set(_clusterOrder, _clusterOrder.text(), tr("Current cluster order used by the hierarchy chart."));
+    qttooltipkit::set(_rightClickedCluster, _rightClickedCluster.text(), tr("Cluster most recently opened from the chart."));
+    qttooltipkit::set(_clearRightClickedCluster, _clearRightClickedCluster.text(), tr("Clear the current chart cluster highlight."));
+    qttooltipkit::set(_topSelectedHierarchyStatus, _topSelectedHierarchyStatus.text(), tr("Selected top-level hierarchy item shared with GeneDetect."));
     _topSelectedHierarchyStatus.setString("");
-    _removeTableSelection.setToolTip("Remove Table Selection");
-    _subsampleDataStart.setToolTip("Create a smaller dataset from the chosen hierarchy level.");
-    _subsampleByLevel.setToolTip("Choose whether to sample top, middle, or leaf clusters.");
-    _subsamplePercentValue.setToolTip("Percentage of points to keep from each selected cluster.");
-    _subsampleInplace.setToolTip("Replace the current point dataset with sampled points instead of adding a separate dataset.");
-    _generateTreeDataFilesPerClusterStart.setToolTip("Export one tree-data file for each cluster.");
+    qttooltipkit::set(_removeTableSelection, _removeTableSelection.text(), tr("Remove Table Selection"));
+    qttooltipkit::set(_subsampleDataStart, _subsampleDataStart.text(), tr("Create a smaller dataset from the chosen hierarchy level."));
+    qttooltipkit::set(_subsampleByLevel, _subsampleByLevel.text(), tr("Choose whether to sample top, middle, or leaf clusters."));
+    qttooltipkit::set(_subsamplePercentValue, _subsamplePercentValue.text(), tr("Percentage of points to keep from each selected cluster."));
+    qttooltipkit::set(_subsampleInplace, _subsampleInplace.text(), tr("Replace the current point dataset with sampled points instead of adding a separate dataset."));
+    qttooltipkit::set(_generateTreeDataFilesPerClusterStart, _generateTreeDataFilesPerClusterStart.text(), tr("Export one tree-data file for each cluster."));
     //_treeSimilarity.setToolTip("Tree Similarity");
    // _treeSimilarity.initialize(0.0, 1.0, 1.0, 2);
     _subsamplePercentValue.initialize(1.00, 100.00, 15.00, 2);
