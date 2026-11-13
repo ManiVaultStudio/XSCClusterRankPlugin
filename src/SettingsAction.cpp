@@ -1438,21 +1438,28 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
 {
     WidgetAction::fromVariantMap(variantMap);
 
-    _mainPointsDataset.fromParentVariantMap(variantMap);
-    _embeddingDataset.fromParentVariantMap(variantMap);
+    const auto restoreDataset = [&variantMap](mv::gui::DatasetPickerAction& picker) {
+        const auto saved = variantMap.value(picker.getSerializationName()).toMap();
+        if (saved.isEmpty())
+            return;
+        picker.mv::gui::WidgetAction::fromVariantMap(saved);
+        picker.setCurrentDataset(saved.value(QStringLiteral("Value")).toString());
+    };
+    restoreDataset(_mainPointsDataset);
+    restoreDataset(_embeddingDataset);
     _topHierarchyRelativeClusterCountInclusion.fromParentVariantMap(variantMap);
     _statusChangedAction.fromParentVariantMap(variantMap);
-    _hierarchyTopClusterDataset.fromParentVariantMap(variantMap);
-    _hierarchyMiddleClusterDataset.fromParentVariantMap(variantMap);
-    _hierarchyBottomClusterDataset.fromParentVariantMap(variantMap);
+    restoreDataset(_hierarchyTopClusterDataset);
+    restoreDataset(_hierarchyMiddleClusterDataset);
+    restoreDataset(_hierarchyBottomClusterDataset);
     _selectedClusterNamesVariant.fromParentVariantMap(variantMap);
     //_filteredGeneNamesVariant.fromParentVariantMap(variantMap);
     //_updateButtonForGeneFiltering.fromParentVariantMap(variantMap);
     //_topNGenesFilter.fromParentVariantMap(variantMap);
-    _speciesNamesDataset.fromParentVariantMap(variantMap);
-    _filterEditTreeDataset.fromParentVariantMap(variantMap);
+    restoreDataset(_speciesNamesDataset);
+    restoreDataset(_filterEditTreeDataset);
     _createPointSelectTree.fromParentVariantMap(variantMap);
-    _referenceTreeDataset.fromParentVariantMap(variantMap);
+    restoreDataset(_referenceTreeDataset);
     _geneNamesConnection.fromParentVariantMap(variantMap);
     _removeTableSelection.fromParentVariantMap(variantMap);
     _clusterOrder.fromParentVariantMap(variantMap);
