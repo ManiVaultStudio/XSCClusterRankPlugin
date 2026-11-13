@@ -824,10 +824,10 @@ SettingsAction::SettingsAction(XSCClusterRankPlugin& XSCClusterRankPlugin) :
 
     _subsamplingPopupMessage = new QMessageBox();
     _subsamplingPopupMessage->setIcon(QMessageBox::Information);
-    _subsamplingPopupMessage->setWindowTitle("Computation process in progress");
-    _subsamplingPopupMessage->setText("Subsample process in progress");
+    _subsamplingPopupMessage->setWindowTitle("Preparing cluster data");
+    _subsamplingPopupMessage->setText("Selecting a representative sample");
     _subsamplingPopupMessage->setInformativeText(
-        "This process may take some time based on the input data size, your memory and processor. <br> This popup will close automatically once initialization is complete. "
+        "This window closes when the sample is ready."
     );
     _subsamplingPopupMessage->setTextFormat(Qt::RichText); // Enable rich text formatting
     _subsamplingPopupMessage->setTextInteractionFlags(Qt::TextBrowserInteraction); // Enable link interaction

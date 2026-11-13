@@ -1288,7 +1288,7 @@ QVariantMap XSCClusterRankPlugin::toVariantMap() const
 
 XSCClusterRankPluginFactory::XSCClusterRankPluginFactory()
 {
-    setIconByName("sitemap");
+    setIconByName("layer-group");
 }
 
 ViewPlugin* XSCClusterRankPluginFactory::produce()
